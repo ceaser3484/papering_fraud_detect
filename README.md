@@ -18,3 +18,9 @@
 - git branch : 현재 생성되어 있는 branch 목록. * 로 되어 있는 곳이 지금 현재 작업하고 있는 브랜치
 - git branch -D <브랜치 이름> : 브랜치 중에서 <브랜치 이름>을 삭제
 - git checkout <브랜치 이름> : 생성되어 있는 브랜치로 이동
+
+# 구축 환경
+- 이민정
+- macos
+- python 3.12.7
+- tensorflow 2.16.2
