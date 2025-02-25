@@ -80,7 +80,7 @@ else:
         MaxPooling2D(2, 2),
 
         Flatten(),
-        Dense(128, activation='relu'),  # ✅ (3,3) 제거
+        Dense(128, activation='relu'), 
         Dropout(0.5),
         Dense(len(train_generator.class_indices), activation='softmax')
     ])
