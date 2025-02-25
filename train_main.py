@@ -103,4 +103,4 @@ model.fit(
 # 모델 저장
 model_save_path = os.path.join(DATA_PATH, 'cnn_model_fixed.h5')  
 model.save(model_save_path)
-print('✅ 모델 학습 및 저장 완료')
+print('모델 학습 및 저장 완료')
