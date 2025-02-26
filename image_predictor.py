@@ -104,7 +104,7 @@ def predict_image(img_path, filter_type="clahe"):
 
     # 예측 확률이 낮으면 원본 이미지로 재예측
     if pred_prob < 0.5:
-        print("⚠️ 예측 확률이 낮아서 원본 이미지로 다시 예측함.")
+        print("예측 확률이 낮아서 원본 이미지로 다시 예측함.")
         
         original_img = cv2.imread(img_path)
         original_img = cv2.resize(original_img, (224, 224))
