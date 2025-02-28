@@ -10,15 +10,26 @@ from sklearn.utils import class_weight
 
 
 
-def preprocessing():
-    pass
+def preprocessing(img):
+    if img.dtype != np.uint8:
+        img = img.astype(np.uint8)
 
+    cv_img = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+    cv_img = list(cv2.split(cv_img))
+    cv_img[0] = cv2.equalizeHist(cv_img[0])
+    cv_img = cv2.merge(cv_img)
+    cv_img = cv2.cvtColor(cv_img, cv2.COLOR_YCrCb2RGB)
+
+    # scaling and shift data type
+    img_float = cv_img.astype(np.float32) / 255.0
+    return img_float
 
 def main():
     batch_size = 2
     images_path = '/home/ceaser/DATASET/mapping_img_data/train/'
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
-        rescale=1/255, horizontal_flip=True, fill_mode='nearest',
+        preprocessing_function=preprocessing,
+         horizontal_flip=True, fill_mode='nearest',
         vertical_flip=True, zoom_range=[0.3, 0.5],
         validation_split=0.2
     )
@@ -45,17 +56,17 @@ def main():
     )
     model = tf.keras.models.Sequential([
         resnet,
-        Dense(512, activation='relu'),
-        BatchNormalization(),
-        GlobalAveragePooling2D(),
+        # Dense(512, activation='relu'),
+        # BatchNormalization(),
+        # GlobalAveragePooling2D(),
         Dense(19, activation='softmax')
     ])
 
     print(model.summary())
 
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy',
+    model.compile(optimizer='rmsprop', loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(train_image_data,batch_size=2, validation_data=val_image_data,
+    model.fit(train_image_data,batch_size=4, validation_data=val_image_data,
               class_weight=train_class_weight, epochs=100)
 
     # model.fit_generator(
