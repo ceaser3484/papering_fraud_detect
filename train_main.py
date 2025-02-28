@@ -7,7 +7,7 @@ import tensorflow as tf
 from keras.src.layers import BatchNormalization, GlobalAveragePooling2D
 from tensorflow.keras.layers import *
 from sklearn.utils import class_weight
-
+from tensorflow.python.keras.layers import Flatten
 
 
 def preprocessing(img):
@@ -56,17 +56,18 @@ def main():
     )
     model = tf.keras.models.Sequential([
         resnet,
-        # Dense(512, activation='relu'),
-        # BatchNormalization(),
-        # GlobalAveragePooling2D(),
+        Dense(512, activation='relu'),
+        BatchNormalization(),
+        GlobalAveragePooling2D(),
         Dense(19, activation='softmax')
     ])
 
     print(model.summary())
 
-    model.compile(optimizer='rmsprop', loss='sparse_categorical_crossentropy',
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.00008),
+                  loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(train_image_data,batch_size=4, validation_data=val_image_data,
+    model.fit(train_image_data,batch_size=8, validation_data=val_image_data,
               class_weight=train_class_weight, epochs=100)
 
     # model.fit_generator(

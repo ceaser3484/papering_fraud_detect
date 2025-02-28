@@ -20,7 +20,8 @@
 - git checkout <브랜치 이름> : 생성되어 있는 브랜치로 이동
 
 # 구축 환경
-- 이민정
-- macos
-- python 3.12.7
-- tensorflow 2.16.2
+- 장창대
+- ubuntu 24.04.02 LTS
+- python 3.12.0
+- tensorflow 2.18.0
+- opencv 4.11.0
