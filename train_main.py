@@ -64,7 +64,7 @@ def main():
 
     print(model.summary())
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.00008),
+    model.compile(optimizer=tf.keras.optimizers.RMSprop(learning_rate=0.00001),
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
     model.fit(train_image_data,batch_size=8, validation_data=val_image_data,
