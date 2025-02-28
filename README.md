@@ -24,3 +24,8 @@
 - macos
 - python 3.12.7
 - tensorflow 2.16.2
+
+- 박수현
+- macos
+- python 3.12.7
+- tensorflow 2.16.2
