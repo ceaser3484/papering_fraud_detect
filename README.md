@@ -20,7 +20,6 @@
 - git checkout <브랜치 이름> : 생성되어 있는 브랜치로 이동
 
 # 구축 환경
-- 이민정
-- macos
+- 윈도우
 - python 3.12.7
 - tensorflow 2.16.2
