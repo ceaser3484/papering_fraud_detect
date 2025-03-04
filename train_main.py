@@ -8,6 +8,7 @@ from keras.src.layers import BatchNormalization, GlobalAveragePooling2D
 from tensorflow.keras.layers import *
 from sklearn.utils import class_weight
 from tensorflow.python.keras.layers import Flatten
+from tensorflow.python.layers.core import Dropout
 
 
 def preprocessing(img):
@@ -30,8 +31,10 @@ def main():
     image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         preprocessing_function=preprocessing,
          horizontal_flip=True, fill_mode='nearest',
+        width_shift_range=[0.1, 0.2],
+        height_shift_range=[0.1,0.2],
         vertical_flip=True, zoom_range=[0.3, 0.5],
-        validation_split=0.2
+        validation_split=0.2,
     )
     train_image_data = image_generator.flow_from_directory(
         images_path, subset='training', target_size=(224,224), class_mode='sparse',
@@ -51,24 +54,26 @@ def main():
     )
     train_class_weight = dict(enumerate(train_class_weight))
 
-    resnet = tf.keras.applications.ResNet50V2(
-        include_top=False, input_shape=(224,224,3)
+    vgg = tf.keras.applications.VGG19(
+        include_top=False, weights=None, input_shape=(224,224,3)
     )
     model = tf.keras.models.Sequential([
-        resnet,
-        Dense(512, activation='relu'),
+        vgg,
+        # Dense(1024, activation='relu'),
         BatchNormalization(),
         GlobalAveragePooling2D(),
+        tf.keras.layers.Dropout(0.2),
         Dense(19, activation='softmax')
     ])
 
     print(model.summary())
 
-    model.compile(optimizer=tf.keras.optimizers.RMSprop(learning_rate=0.00009),
+    model.compile(optimizer=tf.keras.optimizers.AdamW(learning_rate=0.00001),
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(train_image_data,batch_size=8, validation_data=val_image_data,
+    history = model.fit(train_image_data,batch_size=32, validation_data=val_image_data,
               class_weight=train_class_weight, epochs=100)
+
 
     # model.fit_generator(
     #     train_image_data,
