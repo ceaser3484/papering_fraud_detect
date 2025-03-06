@@ -3,111 +3,81 @@ import numpy as np
 import os
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from tensorflow.keras.applications import VGG16
+from tensorflow.keras.layers import Dense, Dropout, GlobalAveragePooling2D
+from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from sklearn.utils.class_weight import compute_class_weight
-from collections import Counter
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, "../../data") 
+DATA_PATH = os.path.join(BASE_DIR, '../../data')
+train_data_path = os.path.join(DATA_PATH, 'dataset', 'train')
 
-train_data_path = os.path.join(DATA_PATH, "dataset", "train")
-val_data_path = os.path.join(DATA_PATH, "dataset", "train") 
-
-# 전처리
+# 증강
 train_datagen = ImageDataGenerator(
     rescale = 1./255,
-    rotation_range = 20,
+    rotation_range = 40,
     width_shift_range = 0.2,
     height_shift_range = 0.2,
-    shear_range = 0.2,
-    zoom_range = 0.2,
+    shear_range = 0.3,
+    zoom_range = 0.3,
     horizontal_flip = True,
-    validation_split = 0.2
+    brightness_range = [0.7, 1.3]
 )
 
 # load data
 train_generator = train_datagen.flow_from_directory(
     train_data_path,
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='sparse',
-    subset='training'
+    target_size = (224, 224),
+    batch_size = 16,
+    class_mode = 'categorical'
 )
 
-val_generator = train_datagen.flow_from_directory(
-    train_data_path,
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='sparse',
-    subset='validation'
-)
+num_classes = len(train_generator.class_indices)
 
-# 가중치 계산
-class_counts = Counter(train_generator.classes)
-class_labels = np.array(list(class_counts.keys()))
-class_weights = compute_class_weight(class_weight = 'balanced', classes=class_labels, y=train_generator.classes)
-class_weight_dict = dict(zip(class_labels, class_weights))
+# 가중치
+class_counts = np.bincount(train_generator.classes)
+class_weights = compute_class_weight('balanced', classes=np.unique(train_generator.classes), y=train_generator.classes)
+class_weight_dict = dict(enumerate(class_weights))
 
-print('클래스별 데이터 수 : ', class_counts)
-print('클래스별 가중치 : ', class_weight_dict, '\n')
+# ResNet50
+base_model = ResNet50(weights = 'imagenet', include_top = False, input_shape = (224, 224, 3))
+base_model.trainable = False
 
-use_transfer_learning = True # False -> 기본 CNN 모델 사용
-
-if use_transfer_learning:
-    base_model = VGG16(weights = 'imagenet', include_top = False, input_shape = (224, 224, 3))
-    base_model.trainable = False
-    
-    model = Sequential([
-        base_model,
-        Flatten(),
-        Dense(128, activation = 'relu'),
-        Dropout(0.5),
-        Dense(len(train_generator.class_indices), activation = 'softmax')
-    ])
-    
-else:
-    print('기본 CNN')
-    model = Sequential([
-    Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(224, 224, 3)),
-    MaxPooling2D(2, 2),
-    
-    Conv2D(64, (3, 3), activation = 'relu', padding = 'same'),
-    MaxPooling2D(2, 2),
-    
-    Conv2D(128, (3, 3), activation = 'relu', padding = 'same'),
-    MaxPooling2D(2, 2),
-    
-    Conv2D(256, (3, 3), activation='relu', padding='same'),  
-    MaxPooling2D(2, 2),
-    
-    Flatten(),
-    Dense(128, activation = 'relu'),
-    Dropout(0.5),
-    Dense(len(train_generator.class_indices), activation = 'softmax')
+model = Sequential([
+    base_model,
+    GlobalAveragePooling2D(),
+    Dense(512, activation = 'relu'),
+    Dropout(0.4),
+    Dense(num_classes, activation = 'softmax')
 ])
+
+# 학습률 조정
+lr_reduction = ReduceLROnPlateau(monitor = 'loss', patience = 3, factor = 0.5, min_lr = 1e-6)
+
+# checkpoint
+checkpoint = ModelCheckpoint(
+    'best_model.h5',
+    monitor = 'val_accuracy',
+    save_best_only = True,
+    mode = 'max'
+)
 
 # compile
 model.compile(
     optimizer = Adam(learning_rate = 0.0001),
-    loss = 'sparse_categorical_crossentropy',
+    loss = 'actegorical_crossentropy',
     metrics = ['accuracy']
 )
 
 # 학습
-model.fit(
+history = model.fit(
     train_generator,
-    validation_data = val_generator,
-    epochs = 20,
-    class_weight = class_weight_dict
+    epochs = 50,
+    class_weight = class_weight_dict,
+    callbacks = [lr_reduction, checkpoint]
 )
 
-# model save
 model_save_path = os.path.join(DATA_PATH, 'cnn_model_fixed.h5')
 model.save(model_save_path)
 print('모델 학습 및 저장 완료')
-
