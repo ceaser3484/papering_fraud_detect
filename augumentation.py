@@ -10,17 +10,17 @@ import os
 def manipulate_image(images_df, image_dir_name, num_times, augmented, *image_category, ):
     from tqdm import tqdm
     base_dir = '../../DATASET/mapping_img_data'
-    os.makedirs(os.path.join(base_dir, 'working',image_dir_name))
+    os.makedirs(os.path.join(base_dir, 'working',image_dir_name), exist_ok=True)
+
 
     for category in image_category:
-        for path in tqdm(images_df[images_df['label'] == category]['path'])
+        for path in tqdm(images_df[images_df['label'] == category]['path']):
             for i in range(num_times):
                 name = path.split('/')[-1]
                 image = cv2.imread(path)
-                image_aug = augmented(image)['image']
-                cv2.imwrite(os.path.join(base_dir, image_dir_name, str(i) + category + name),
-                            image_aug)
-
+                image_augmented = augmented(image=image)['image']
+                cv2.imwrite(os.path.join(base_dir, 'working',image_dir_name,
+                                         str(i) + category + name), image_augmented)
 
 
 def data_augument():
@@ -30,25 +30,6 @@ def data_augument():
     test = pd.read_csv('../../DATASET/mapping_img_data/test.csv')
     train['label'] = train['path'].apply(lambda x: x.split('/')[-2])
 
-    # two_list = ['석고수정','들뜸','피스']
-    # os.makedirs('../../DATASET/mapping_img_data/working/train_300_2',exist_ok=True)
-    # for category in two_list:
-    #     for path in tqdm(train[train['label'] == category]['path']):
-    #         for i in range(2):
-    #             name = path.split('/')[-1]
-    #             image = cv2.imread(path)
-    #
-    #             aug = A.Compose([
-    #                 A.VerticalFlip(),
-    #                 A.Rotate(p=0.7),
-    #                 A.HorizontalFlip(),
-    #                 A.RandomBrightnessContrast(brightness_limit=0.2),
-    #                 A.Resize(300,300)
-    #             ])
-    #             image_aug = aug(image=image)['image']
-    #             cv2.imwrite(os.path.join('../../DATASET/mapping_img_data/working/train_300_2',
-    #                                      str(i) + category + name), image_aug)
-
     aug = A.Compose([
         A.VerticalFlip(),
         A.Rotate(p=0.7),
@@ -56,9 +37,13 @@ def data_augument():
         A.RandomBrightnessContrast(brightness_limit=0.2),
         A.Resize(300,300)
     ])
-    augumented_list = ['석고수정','들뜸','피스']
-
-
+    manipulate_image(train, 'train_302', 2, aug, '석고수정','들뜸','피스')
+    print()
+    manipulate_image(train, 'train_303', 3, aug,
+                     '창틀,문틀수정','울음','이음부불량','녹오염','가구수정')
+    print()
+    manipulate_image(train, 'train_304', 6, aug,
+                     '틈새과다','반점')
 
 def show_num_classes():
     import seaborn as sns
