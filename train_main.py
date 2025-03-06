@@ -54,15 +54,15 @@ def main():
     )
     train_class_weight = dict(enumerate(train_class_weight))
 
-    vgg = tf.keras.applications.VGG19(
+    efficient_net = tf.keras.applications.EfficientNetB1(
         include_top=False, weights=None, input_shape=(224,224,3)
     )
     model = tf.keras.models.Sequential([
-        vgg,
-        # Dense(1024, activation='relu'),
+        efficient_net,
+        # Dense(512, activation='relu'),
         BatchNormalization(),
         GlobalAveragePooling2D(),
-        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dropout(0.1),
         Dense(19, activation='softmax')
     ])
 
