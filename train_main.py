@@ -66,7 +66,7 @@ checkpoint = ModelCheckpoint(
 # compile
 model.compile(
     optimizer = Adam(learning_rate = 0.0001),
-    loss = 'actegorical_crossentropy',
+    loss = 'categorical_crossentropy',
     metrics = ['accuracy']
 )
 
