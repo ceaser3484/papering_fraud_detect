@@ -13,7 +13,6 @@ from tensorflow.keras.preprocessing import image
 train_data_path = '/Users/soohyeon/Desktop/AI6_WorldAIProject/projectfile/train'  # train 데이터가 있는 폴더 경로
 test_data_path = '/Users/soohyeon/Desktop/AI6_WorldAIProject/projectfile/test'  # test 데이터가 있는 폴더 경로
 
-# 데이터 증강
 train_datagen = ImageDataGenerator(
     rescale=1.0 / 255,
     rotation_range=30,
@@ -24,7 +23,6 @@ train_datagen = ImageDataGenerator(
     brightness_range=[0.8, 1.2]
 )
 
-# 데이터 로드
 train_generator = train_datagen.flow_from_directory(
     train_data_path,
     target_size=(224, 224),
