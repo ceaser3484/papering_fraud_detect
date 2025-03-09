@@ -2,54 +2,41 @@ import tensorflow as tf
 import numpy as np
 import cv2
 import os
-import yaml
 import matplotlib.pyplot as plt
-from tensorflow.keras.preprocessing import image
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, '../../data/cnn_model_fixed.h5')
-DATASET_PATH = os.path.join(BASE_DIR, '../../data/dataset')
-DATA_YAML_PATH = os.path.join(BASE_DIR, '/Users/leemiinjeong/Desktop/Wall드AI/scr/yolov5/yolo_dataset/data.yaml')
 TEST_IMAGE_PATH = os.path.join(BASE_DIR, '../../data/sample_image.png')
 
 # load model
 def load_model():
     if not os.path.exists(MODEL_PATH):
-        raise FileExistsError(f'모델 파일 존재하지 않음 : {MODEL_PATH}')
+        raise FileNotFoundError('모델 파일 존재하지 않음')
     
-    return tf.keras.models.load_model(MODEL_PATH, compile = True)
+    return tf.keras.models.load_model(MODEL_PATH, compile=True)
 
 model = load_model()
 
-# class 불러오기
-def get_classes():
-    if not os.path.exists(DATA_YAML_PATH):
-        raise FileExistsError('파일 존재하지 않음')
-    
-    with open(DATA_YAML_PATH, "r", encoding='utf-8') as f:
-        data = yaml.sate_load(f)
-        
-    if "names" not in data:
-        raise ValueError('names 필드 찾을 수 없음')
-    
-    return data['names']
+# class 목록
+CLASSES = [
+    '가구수정', '걸레받이수정', '곰팡이', '꼬임', '녹오염', '들뜸', '면불량', '몰딩수정', '반점', '석고수정',
+    '오염', '오타공', '울음', '이음부불량', '창문,문틀수정', '터짐', '틈새과다', '피스', '훼손'
+]
 
-classes = get_classes()
-
-# 필터
-def allpy_filters(img_path, filter_type = 'clahe'):
+# filter
+def apply_filters(img_path, filter_type='clahe'):
     if not os.path.exists(img_path):
-        raise FileExistsError('이미지파일 존재하지 않음')
+        raise FileNotFoundError('이미지 파일 존재하지 않음')
     
-    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)  # 원본 RGB 변환 유지
-
-    if filter_type == "canny":
+    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    
+    if filter_type == 'canny':
         processed_img = cv2.Canny(img, 50, 150)
-
-    elif filter_type == "gaussian":
+        
+    elif filter_type == 'gaussian':
         processed_img = cv2.GaussianBlur(img, (5, 5), 0)
-
+    
     elif filter_type == "adaptive_threshold":
         processed_img = cv2.adaptiveThreshold(
             img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
@@ -72,39 +59,38 @@ def allpy_filters(img_path, filter_type = 'clahe'):
         processed_img = clahe.apply(img)
 
     else:
-        raise ValueError(f"지원되지 않는 필터 타입: {filter_type}")
+        raise ValueError(f" 지원되지 않는 필터 타입: {filter_type}")
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     axes[0].imshow(img_rgb[:, :, ::-1])
     axes[0].set_title("원본 이미지 (RGB 변환됨)")
     axes[1].imshow(processed_img, cmap="gray")
     axes[1].set_title(f"적용된 필터: {filter_type}")
-
+    
     for ax in axes:
-        ax.axis("off")
-
+        ax.axis('off')
+    
     plt.show()
-
+    
     return processed_img
 
 # 예측
-def predict_image(img_path, filter_type="clahe"):
+def predict_image(img_path, filter_type='clahe'):
     if not os.path.exists(img_path):
-        raise FileNotFoundError(f"이미지 파일이 존재하지 않음: {img_path}")
-
+        raise FileNotFoundError('이미지파일 존재하지 않음')
+    
     filtered_img = apply_filters(img_path, filter_type=filter_type)
-
-    # CNN 모델이 RGB 이미지를 받으므로 변환 필요
-    filtered_img = cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2RGB)
-    filtered_img = cv2.resize(filtered_img, (224, 224))
+    
+    filtered_img = cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2BGR)
+    filtered_img = cv2.resize(filtered_img, (224, 224)) 
     filtered_img = filtered_img.astype("float32") / 255.0
     filtered_img = np.expand_dims(filtered_img, axis=0)
-
+    
     prediction = model.predict(filtered_img)
     pred_prob = np.max(prediction)
     pred_index = np.argmax(prediction)
-
-    # 예측 확률이 낮으면 원본 이미지로 재예측
+    
+    # 예측 확률이 낮은 경우
     if pred_prob < 0.5:
         print("예측 확률이 낮아서 원본 이미지로 다시 예측함.")
 
@@ -122,12 +108,11 @@ def predict_image(img_path, filter_type="clahe"):
             pred_prob = original_pred_prob
             pred_index = original_pred_index
 
-    # 최종 예측
     predicted_class = "알 수 없음"
-    if pred_prob >= 0.5 and 0 <= pred_index < len(classes):
-        predicted_class = classes[pred_index]
+    if pred_prob >= 0.5 and 0 <= pred_index < len(CLASSES):
+        predicted_class = CLASSES[pred_index]
 
-    print(f"최종 예측된 클래스: {predicted_class} (확률: {pred_prob:.2f})")
+    print(f" 최종 예측된 클래스: {predicted_class} (확률: {pred_prob:.2f})")
 
     return predicted_class
 
@@ -137,4 +122,4 @@ if __name__ == "__main__":
         result = predict_image(TEST_IMAGE_PATH, filter_type="clahe")
         print(f"예측 결과: {result}")
     else:
-        print(f"이미지 파일이 존재하지 않음. 올바른 이미지 경로 확인 필요")
+        print(f" 이미지 파일이 존재하지 않음. 올바른 이미지 경로 확인 필요")            
