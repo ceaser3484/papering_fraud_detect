@@ -122,6 +122,6 @@ def plot_training(history):
     plt.title('Training Loss')
     plt.legend()
     
-    plt.show()
+    plt.show() 
     
 plot_training(history)
