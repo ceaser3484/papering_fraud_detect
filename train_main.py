@@ -74,7 +74,7 @@ else:
         Dense(num_classes, activation='softmax')
     ])
 
-learning_rate = 3e-4
+learning_rate = 2e-4
 
 optimizer = Adam(learning_rate=learning_rate)
 
@@ -85,7 +85,7 @@ model.compile(
 )
 
 # Fine-Tuning (20번째 epoch 이후 8개 레이어 학습 가능하게 변경)
-for layer in base_model.layers[-4:]: 
+for layer in base_model.layers[-6:]: 
     layer.trainable = True
 
 # Callback 
