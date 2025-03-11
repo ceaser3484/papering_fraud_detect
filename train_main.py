@@ -3,7 +3,7 @@ import numpy as np
 import os
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, GlobalAveragePooling2D
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
@@ -21,10 +21,10 @@ train_datagen = ImageDataGenerator(
     width_shift_range=0.3,
     height_shift_range=0.3,
     shear_range=0.3,
-    zoom_range=(0.7, 1.3),
+    zoom_range=(0.7, 1.3),  
     horizontal_flip=True,
-    brightness_range=(0.7, 1.4),
-    channel_shift_range=0.3,  
+    brightness_range=(0.7, 1.4),  
+    channel_shift_range=0.5,  
     fill_mode='reflect'
 )
 
@@ -74,7 +74,7 @@ else:
         Dense(num_classes, activation='softmax')
     ])
 
-learning_rate = 2e-4
+learning_rate = 3e-4
 
 optimizer = Adam(learning_rate=learning_rate)
 
@@ -85,12 +85,12 @@ model.compile(
 )
 
 # Fine-Tuning (20번째 epoch 이후 8개 레이어 학습 가능하게 변경)
-for layer in base_model.layers[-8:]: 
+for layer in base_model.layers[-4:]: 
     layer.trainable = True
 
 # Callback 
 lr_reduction = ReduceLROnPlateau(monitor='loss', patience=3, factor=0.7, min_lr=1e-6)
-early_stopping = EarlyStopping(monitor='loss', patience=3, restore_best_weights=True)  # 🚀 patience 5 → 3으로 줄임
+early_stopping = EarlyStopping(monitor='loss', patience=3, restore_best_weights=True) 
 
 # 모델 학습
 history = model.fit(
