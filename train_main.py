@@ -64,7 +64,7 @@ for class_name, target_count in target_counts.items():
 
     # 증강할 이미지 개수 
     num_to_generate = target_count - num_existing
-    print(f"🔄 {class_name} 증강 진행: {num_existing}개 → {target_count}개")
+    print(f"{class_name} 증강 진행: {num_existing}개 → {target_count}개")
 
     # 증강 실행
     for i in range(num_to_generate):
