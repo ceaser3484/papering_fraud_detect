@@ -84,7 +84,7 @@ model.compile(
     metrics=['accuracy']
 )
 
-# Fine-Tuning (20번째 epoch 이후 8개 레이어 학습 가능하게 변경)
+# Fine-Tuning
 for layer in base_model.layers[-6:]: 
     layer.trainable = True
 
