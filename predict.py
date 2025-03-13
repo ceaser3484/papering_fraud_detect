@@ -4,6 +4,9 @@ from glob import glob
 import pandas as pd
 import numpy as np
 import pickle
+from PIL import Image
+import matplotlib.pyplot as plt
+
 
 def main():
     base_dir = "../../DATASET/mapping_img_data"
@@ -12,7 +15,8 @@ def main():
 
     submission_data = pd.read_csv(os.path.join(base_dir, 'sample_submission.csv'))
     test_data = test_data.join(submission_data.set_index('id'), on='id')
-    test_data.sort_values(by=['id']) # 여기서 잘 안됨... 왜 sorting이 안될까?
+    test_data = test_data.sample(n=2)
+    print(test_data)
 
     image_data_generator_predict = tf.keras.preprocessing.image.ImageDataGenerator(
        rescale=1. / 255
@@ -25,12 +29,23 @@ def main():
     with open('fraud-class.pkl', 'rb') as f:
         classes = pickle.load(f)
     classes = {value:key for key, value in classes.items()}
-    # print(classes)
+    predicted_label = []
     for fraud in np.argmax(result, axis=1):
-        print(classes[fraud])
+        predicted_label.append(classes[fraud])
 
+    test_data = test_data.reset_index(drop=True)
+    test_data['predicted'] = pd.Series(predicted_label, index=test_data.index)
+    print(test_data)
 
+    plt.rcParams['font.family'] = 'NanumGothic'  # 원하는 폰트명으로 변경
+    plt.rcParams['axes.unicode_minus'] = False
 
+    for idx, row in test_data.iterrows():
+        img = tf.keras.utils.img_to_array(Image.open(row['path']))
+        plt.imshow(img.astype(np.uint8))
+        plt.title(f"label: {row['label']}\npredicted:{row['predicted']}")
+        plt.show()
 
+    # plt.show()
 if __name__ == '__main__':
     main()
