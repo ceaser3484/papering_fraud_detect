@@ -67,7 +67,7 @@ def main():
 
         with open('fraud-class.pkl', 'wb') as f:
             pickle.dump(train_generator.class_indices, f)
-        
+
 
         train_class_weight = class_weight.compute_class_weight(
             'balanced',
