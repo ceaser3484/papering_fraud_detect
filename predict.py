@@ -15,7 +15,7 @@ def main():
 
     submission_data = pd.read_csv(os.path.join(base_dir, 'sample_submission.csv'))
     test_data = test_data.join(submission_data.set_index('id'), on='id')
-    test_data = test_data.sample(n=2)
+    test_data = test_data.sample(n=4)
     print(test_data)
 
     image_data_generator_predict = tf.keras.preprocessing.image.ImageDataGenerator(

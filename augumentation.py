@@ -1,4 +1,3 @@
-from PIL import Image
 import cv2
 import albumentations as A
 import glob
@@ -31,6 +30,7 @@ def data_augument():
     train['label'] = train['path'].apply(lambda x: x.split('/')[-2])
 
     aug = A.Compose([
+        A.CLAHE(p=0.5),
         A.VerticalFlip(),
         A.Rotate(p=0.7),
         A.HorizontalFlip(),
@@ -140,5 +140,5 @@ def show_num_classes():
 
 if __name__ == '__main__':
     show_num_classes()
-    # data_augument()
-    # show_num_classes()
+    data_augument()
+    show_num_classes()
