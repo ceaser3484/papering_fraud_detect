@@ -6,85 +6,48 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def manipulate_image(images_df, image_dir_name, num_times, augmented, *image_category, ):
+from scipy.sparse.csgraph import maximum_bipartite_matching
+
+
+def manipulate_image(images_df, image_dir_name, num_times, augmented, category):
     from tqdm import tqdm
     base_dir = '../../DATASET/mapping_img_data'
     os.makedirs(os.path.join(base_dir, 'working',image_dir_name), exist_ok=True)
 
-
-    for category in image_category:
-        for path in tqdm(images_df[images_df['label'] == category]['path']):
-            for i in range(num_times):
-                name = path.split('/')[-1]
-                image = cv2.imread(path)
-                image_augmented = augmented(image=image)['image']
-                cv2.imwrite(os.path.join(base_dir, 'working',image_dir_name,
-                                         str(i) + category + name), image_augmented)
+    for path in tqdm(images_df[images_df['label'] == category]['path']):
+        for i in range(num_times):
+            name = path.split('/')[-1]
+            image = cv2.imread(path)
+            image_augmented = augmented(image=image)['image']
+            cv2.imwrite(os.path.join(base_dir, 'working',image_dir_name,
+                                     str(i) + category + name), image_augmented)
 
 
 def data_augument():
-    from tqdm import tqdm
+
 
     train = pd.DataFrame({'path': glob.glob("../../DATASET/mapping_img_data/train/*/*")})
-    test = pd.read_csv('../../DATASET/mapping_img_data/test.csv')
+
     train['label'] = train['path'].apply(lambda x: x.split('/')[-2])
 
     aug = A.Compose([
-        A.CLAHE(p=0.5),
+        # A.CLAHE(p=0.3),
+        A.AdvancedBlur(p=0.6),
         A.VerticalFlip(),
         A.Rotate(p=0.7),
         A.HorizontalFlip(),
         A.RandomBrightnessContrast(brightness_limit=0.2),
-        A.Resize(300,300)
+        A.Resize(400,400)
     ])
-    manipulate_image(train, 'train_301', 200, aug,
-                     '반점')
-    print()
-    manipulate_image(train, 'train_302', 115, aug,
-                     '틈새과다')
-    print()
-    manipulate_image(train, 'train_303', 50, aug,
-                     '가구수정')
-    print()
-    manipulate_image(train, 'train_304', 40, aug,
-                     '녹오염')
-    print()
-    manipulate_image(train, 'train_305', 35, aug,
-                     '이음부불량')
-    print()
-    manipulate_image(train, 'train_306', 26, aug,
-                     '울음')
-    print()
-    manipulate_image(train, 'train_307', 20, aug,
-                     '창틀,문틀수정')
-    print()
-    manipulate_image(train, 'train_308', 10, aug,
-                     '피스')
-    print()
-    manipulate_image(train, 'train_309', 10, aug,
-                     '들뜸')
-    print()
-    manipulate_image(train, 'train_310', 9, aug,
-                     '석고수정')
+    max_img_num = 3000
+    counts = train['label'].value_counts()
+    labels = counts.index
 
-    print()
-    manipulate_image(train, 'train_311', 5, aug,
-                     '면불량')
-    print()
-    manipulate_image(train, 'train_312', 4, aug,
-                     '몰딩수정')
-    print()
-    manipulate_image(train, 'train_313', 6, aug,
-                     '오타공','곰팡이')
-    print()
-    manipulate_image(train, 'train_313', 5, aug,
-                     '터짐')
-    print()
-    manipulate_image(train, 'train_313', 4, aug,
-                     '꼬임')
-    print()
-    manipulate_image(train, 'train_313', 2, aug,
-                     '걸레받이수정')
+    for label in labels:
+        num_images = counts[label]
+        how_many_times = (max_img_num // num_images) - 1
+        manipulate_image(train, f"{label}_aug", how_many_times, aug, label)
+        print()
 
 
 def show_num_classes():
@@ -106,22 +69,22 @@ def show_num_classes():
         train = pd.concat([train, train_aug], axis=0)
 
 
-    #####################################################################################################
-    # 임의 수정
-    try:
-        edited = train[train['label'] == '걸레받이수정']
-        damaged = train[train['label'] == '훼손']
-        train.drop(train[(train['label'] == '훼손') | (train['label'] == '걸레받이수정')].index, inplace=True)
-
-        sampled_emitted = edited.sample(n=600)
-        sampled_dammaged = damaged.sample(n=600)
-        del edited
-        del damaged
-        train = pd.concat([train, sampled_dammaged, sampled_emitted], axis=0)
-    except:
-        print('something is empty')
-    # 임의 수정 끝!
-    ############################################################################3#######################
+    # #####################################################################################################
+    # # 임의 수정
+    # try:
+    #     edited = train[train['label'] == '걸레받이수정']
+    #     damaged = train[train['label'] == '훼손']
+    #     train.drop(train[(train['label'] == '훼손') | (train['label'] == '걸레받이수정')].index, inplace=True)
+    #
+    #     sampled_emitted = edited.sample(n=600)
+    #     sampled_dammaged = damaged.sample(n=600)
+    #     del edited
+    #     del damaged
+    #     train = pd.concat([train, sampled_dammaged, sampled_emitted], axis=0)
+    # except:
+    #     print('something is empty')
+    # # 임의 수정 끝!
+    # ############################################################################3#######################
     counts = train['label'].value_counts()
 
     # countplot 생성
@@ -134,6 +97,8 @@ def show_num_classes():
     plt.title("Label Counts")
     plt.xlabel("Label")
     plt.ylabel("Count")
+
+    # print(counts)
 
     # 그래프 표시
     plt.show()

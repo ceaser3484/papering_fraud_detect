@@ -24,21 +24,21 @@ def main():
 
     train = pd.concat([train, train_aug], axis=0)
 
-    edited = train[train['label'] == '걸레받이수정']
-    damaged = train[train['label'] == '훼손']
-    train.drop(train[(train['label'] == '훼손') | (train['label'] == '걸레받이수정')].index, inplace=True)
+    # edited = train[train['label'] == '걸레받이수정']
+    # damaged = train[train['label'] == '훼손']
+    # train.drop(train[(train['label'] == '훼손') | (train['label'] == '걸레받이수정')].index, inplace=True)
+    #
+    # sampled_emitted = edited.sample(n=600)
+    # sampled_dammaged = damaged.sample(n=600)
+    # del edited
+    # del damaged
+    # train = pd.concat([train, sampled_dammaged, sampled_emitted], axis=0)
+    # del sampled_emitted
+    # del sampled_dammaged
 
-    sampled_emitted = edited.sample(n=600)
-    sampled_dammaged = damaged.sample(n=600)
-    del edited
-    del damaged
-    train = pd.concat([train, sampled_dammaged, sampled_emitted], axis=0)
-    del sampled_emitted
-    del sampled_dammaged
-
-    kfold = StratifiedKFold(n_splits=5, random_state=3, shuffle=True)
+    kfold = StratifiedKFold(n_splits=3, random_state=3, shuffle=True)
     image_data_generator_train = tf.keras.preprocessing.image.ImageDataGenerator(
-        horizontal_flip=True, vertical_flip=True, rescale=1./255
+        rescale=1./255,
     )
     image_data_generator_val = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1./255
@@ -46,6 +46,7 @@ def main():
 
     model = tf.keras.Sequential([
         tf.keras.applications.efficientnet.EfficientNetB4(include_top=False,pooling='avg'),
+        # tf.keras.layers.Dense(100, activation='relu'),
         tf.keras.layers.Dense(19, activation='softmax')
     ])
 
@@ -55,17 +56,18 @@ def main():
     model.compile(optimizer='adamw',
                   loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-    for train_idx, val_idx in kfold.split(train, train['label']):
+    for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(train, train['label'])):
+        print(f"{fold_idx} fold trainning")
         train_data = train.iloc[train_idx]
         val_data = train.iloc[val_idx]
 
         train_generator = image_data_generator_train.flow_from_dataframe(train_data, x_col='path',
-                        class_mode='sparse',y_col='label',batch_size=32, target_size=(300,300))
+                        class_mode='sparse',y_col='label',batch_size=32, target_size=(380,380))
         val_generator = image_data_generator_val.flow_from_dataframe(
-            val_data, class_mode='sparse',x_col='path', y_col='label', batch_size=32, target_size=(300,300)
+            val_data, class_mode='sparse',x_col='path', y_col='label', batch_size=32, target_size=(380,380)
         )
 
-        with open('fraud-class.pkl', 'wb') as f:
+        with open('fraud-class_origin.pkl', 'wb') as f:
             pickle.dump(train_generator.class_indices, f)
 
 
@@ -79,7 +81,7 @@ def main():
         # model.compile(optimizer='rmsprop',
         #               loss='categorical_crossentropy', metrics=['accuracy'])
         model.fit(train_generator, class_weight=train_class_weight,
-                  validation_data=val_generator, epochs=50,
+                  validation_data=val_generator, epochs=10,
                   callbacks=[early_stop, reduce_lr])
 
         model.save("model_fold.keras")

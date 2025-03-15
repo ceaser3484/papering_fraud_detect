@@ -23,10 +23,10 @@ def main():
     )
 
     test = image_data_generator_predict.flow_from_dataframe(test_data, x_col='path', y_col='label', class_mode='sparse')
-    model = tf.keras.models.load_model('model_fold.keras')
+    model = tf.keras.models.load_model('blur_model_fold_origin.keras')
     result = model.predict(test)
 
-    with open('fraud-class.pkl', 'rb') as f:
+    with open('fraud-class_origin.pkl', 'rb') as f:
         classes = pickle.load(f)
     classes = {value:key for key, value in classes.items()}
     predicted_label = []
@@ -46,6 +46,5 @@ def main():
         plt.title(f"label: {row['label']}\npredicted:{row['predicted']}")
         plt.show()
 
-    # plt.show()
 if __name__ == '__main__':
     main()
