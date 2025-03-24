@@ -16,8 +16,8 @@ def main():
 
     submission_data = pd.read_csv(os.path.join(base_dir, 'sample_submission.csv'))
     test_data = test_data.join(submission_data.set_index('id'), on='id')
-    # test_data = test_data.sample(n=10)
-    # print(test_data)
+    test_data = test_data.sample(n=10)
+    print(test_data)
 
     image_data_generator_predict = tf.keras.preprocessing.image.ImageDataGenerator(
        rescale=1. / 255
@@ -34,7 +34,6 @@ def main():
 
     label = test_data['label'].apply(lambda x : pre_classes[x])
     print(accuracy_score(label, np.argmax(result, axis=1)))
-    exit()
 
     classes = {value:key for key, value in pre_classes.items()}
     predicted_label = []
