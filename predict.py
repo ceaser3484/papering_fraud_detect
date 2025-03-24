@@ -6,6 +6,7 @@ import numpy as np
 import pickle
 from PIL import Image
 import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
 
 
 def main():
@@ -15,20 +16,27 @@ def main():
 
     submission_data = pd.read_csv(os.path.join(base_dir, 'sample_submission.csv'))
     test_data = test_data.join(submission_data.set_index('id'), on='id')
-    test_data = test_data.sample(n=4)
-    print(test_data)
+    # test_data = test_data.sample(n=10)
+    # print(test_data)
 
     image_data_generator_predict = tf.keras.preprocessing.image.ImageDataGenerator(
        rescale=1. / 255
     )
 
-    test = image_data_generator_predict.flow_from_dataframe(test_data, x_col='path', y_col='label', class_mode='sparse')
-    model = tf.keras.models.load_model('blur_model_fold_origin.keras')
+    test = image_data_generator_predict.flow_from_dataframe(test_data,
+                x_col='path', y_col='label', class_mode='sparse', target_size=(600,600))
+
+    model = tf.keras.models.load_model('model_fold.keras')
     result = model.predict(test)
 
     with open('fraud-class_origin.pkl', 'rb') as f:
-        classes = pickle.load(f)
-    classes = {value:key for key, value in classes.items()}
+        pre_classes = pickle.load(f)
+
+    label = test_data['label'].apply(lambda x : pre_classes[x])
+    print(accuracy_score(label, np.argmax(result, axis=1)))
+    exit()
+
+    classes = {value:key for key, value in pre_classes.items()}
     predicted_label = []
     for fraud in np.argmax(result, axis=1):
         predicted_label.append(classes[fraud])

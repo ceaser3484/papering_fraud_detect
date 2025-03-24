@@ -30,14 +30,29 @@ def data_augument():
 
     train['label'] = train['path'].apply(lambda x: x.split('/')[-2])
 
+    # aug = A.Compose([
+    #     # A.CLAHE(p=0.3),
+    #     A.AdvancedBlur(p=0.6),
+    #     A.VerticalFlip(),
+    #     A.Rotate(p=0.7),
+    #     A.HorizontalFlip(),
+    #     A.RandomBrightnessContrast(brightness_limit=0.2),
+    #     A.Resize(600,600)
+    # ])
+
     aug = A.Compose([
-        # A.CLAHE(p=0.3),
-        A.AdvancedBlur(p=0.6),
-        A.VerticalFlip(),
-        A.Rotate(p=0.7),
-        A.HorizontalFlip(),
-        A.RandomBrightnessContrast(brightness_limit=0.2),
-        A.Resize(400,400)
+        A.ShiftScaleRotate(scale_limit=(0,0.1), p=0.7),
+        A.RandomBrightnessContrast(brightness_limit=[-0.3,0.2], contrast_limit=[-0.3,0.1], p=1),
+        A.HorizontalFlip(p=0.5),
+        # A.VerticalFlip(p=0.3),
+        A.GaussNoise(var_limit=(10,50), p=0.5),
+        A.CoarseDropout(p=0.3, max_holes=15, max_height=15, max_width=15),
+        A.OneOf([
+            A.CLAHE(p=0.7),
+            A.ToGray(p=0.1),
+            A.Blur(blur_limit=(5,10),p=0.2)
+        ],p=1),
+
     ])
     max_img_num = 3000
     counts = train['label'].value_counts()

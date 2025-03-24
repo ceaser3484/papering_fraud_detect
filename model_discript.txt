@@ -1,0 +1,28 @@
+b6_best_model_fold.keras
+accuracy: 0.6070
+어떤 폴더로 훈련시켰는지 기억나지 않음
+----------------------------------------------------------------------------------------------
+model_fold.keras
+aug = A.Compose([
+        A.ShiftScaleRotate(scale_limit=(0,0.1), p=0.7),
+        A.RandomBrightnessContrast(brightness_limit=[-0.3,0.2], contrast_limit=[-0.3,0.1], p=1),
+        A.HorizontalFlip(p=0.5),
+        # A.VerticalFlip(p=0.3),
+        A.GaussNoise(var_limit=(10,50), p=0.5),
+        A.CoarseDropout(p=0.3, max_holes=15, max_height=15, max_width=15),
+        A.OneOf([
+            A.CLAHE(p=0.7),
+            A.ToGray(p=0.1),
+            A.Blur(blur_limit=(5,10),p=0.2)
+        ],p=1),
+
+    ])
+ efficientNetB7 모델
+ accuracy: ???
+--------------------------------------------------------------------------------------
+b6_bad_model_fold.keras
+efficientNetB6 모델
+accuracy: 0.04065
+어떤 폴더로 훈련시켰는지 기억나지 않음
+
+----------------------------------------------------------------------------------------
