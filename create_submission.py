@@ -12,7 +12,7 @@ MODEL_PATH = os.path.join(DATA_PATH, 'cnn_model_gradcam.h5')
 TEST_DIR = os.path.join(DATA_PATH, 'dataset', 'test')
 SUBMISSION_PATH = os.path.join(DATA_PATH, 'submission.csv')
 
-# 클래스 목록 (예시)
+# 클래스 목록
 CLASSES = [
     '가구수정', '걸레받이수정', '곰팡이', '꼬임', '녹오염', '들뜸', '면불량', '몰딩수정', '반점', '석고수정',
     '오염', '오타공', '울음', '이음부불량', '창문,문틀수정', '터짐', '틈새과다', '피스', '훼손'
@@ -34,17 +34,19 @@ file_names = sorted([f for f in os.listdir(TEST_DIR) if f.endswith(".png")])
 
 for file_name in file_names:
     img_path = os.path.join(TEST_DIR, file_name)
-    
+
     try:
         img_array = preprocess_image(img_path)
-        predictions = model.predict(img_array)
-        pred_class = CLASSES[np.argmax(predictions)]
-        results.append((file_name, pred_class))
+        predictions = model.predict(img_array)[0]
+        pred_index = np.argmax(predictions)
+        pred_class = CLASSES[pred_index]
+        confidence = float(predictions[pred_index])  # 소수점 변환
+        results.append((file_name, pred_class, confidence))
     except Exception as e:
         print(f"[경고] 이미지 처리 실패: {file_name} -> {e}")
-        results.append((file_name, "예측불가"))
+        results.append((file_name, "예측불가", 0.0))
 
 # CSV 저장
-submission_df = pd.DataFrame(results, columns=["id", "label"])
+submission_df = pd.DataFrame(results, columns=["id", "label", "confidence"])
 submission_df.to_csv(SUBMISSION_PATH, index=False)
 print(f"[완료] 파일 저장: {SUBMISSION_PATH}")
