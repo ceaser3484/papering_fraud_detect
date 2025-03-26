@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from glob import glob
 from sklearn.utils import class_weight
+from sklearn.metrics import accuracy_score
 import pickle
 
 
@@ -12,14 +13,14 @@ def main():
     import os
 
     base_dir = "../../DATASET/mapping_img_data"
-    if not os.path.isdir(os.path.join(base_dir, 'working_1')):
+    if not os.path.isdir(os.path.join(base_dir, 'working_2')):
         print('sorry you should generate image. you should activate augumentation.py')
         exit()
 
     train = pd.DataFrame({'path':glob(os.path.join(base_dir, 'train','*','*'))})
     train['label'] = train['path'].apply(lambda x: x.split('/')[-2])
 
-    train_aug = pd.DataFrame({'path':glob(os.path.join(base_dir, 'working_1','*','*'))})
+    train_aug = pd.DataFrame({'path':glob(os.path.join(base_dir, 'working_2','*','*'))})
     train_aug['label'] = train_aug['path'].apply(lambda x: x.split('/')[-1].split('.')[0]
                                                  ).apply(lambda x: re.sub(r"[0-9]","",x))
 
@@ -31,17 +32,7 @@ def main():
     submission_data = pd.read_csv(os.path.join(base_dir, 'sample_submission.csv'))
     test_data = test_data.join(submission_data.set_index('id'), on='id')
 
-    # edited = train[train['label'] == '걸레받이수정']
-    # damaged = train[train['label'] == '훼손']
-    # train.drop(train[(train['label'] == '훼손') | (train['label'] == '걸레받이수정')].index, inplace=True)
-    #
-    # sampled_emitted = edited.sample(n=600)
-    # sampled_dammaged = damaged.sample(n=600)
-    # del edited
-    # del damaged
-    # train = pd.concat([train, sampled_dammaged, sampled_emitted], axis=0)
-    # del sampled_emitted
-    # del sampled_dammaged
+    # train = train.sample(n=100)
 
     kfold = StratifiedKFold(n_splits=3, random_state=3, shuffle=True)
     image_data_generator_train = tf.keras.preprocessing.image.ImageDataGenerator(
@@ -54,7 +45,7 @@ def main():
         rescale=1. / 255
     )
     model = tf.keras.Sequential([
-        tf.keras.applications.efficientnet.EfficientNetB7(include_top=False,pooling='avg'),
+        tf.keras.applications.efficientnet.EfficientNetB6(include_top=False,pooling='avg'),
         # tf.keras.layers.Dense(100, activation='relu'),
         tf.keras.layers.Dense(19, activation='softmax')
     ])
@@ -71,9 +62,9 @@ def main():
         val_data = train.iloc[val_idx]
 
         train_generator = image_data_generator_train.flow_from_dataframe(train_data, x_col='path',
-                        class_mode='sparse',y_col='label',batch_size=4, target_size=(600,600))
+                        class_mode='sparse',y_col='label',batch_size=8, target_size=(528,528))
         val_generator = image_data_generator_val.flow_from_dataframe(
-            val_data, class_mode='sparse',x_col='path', y_col='label', batch_size=4, target_size=(600,600)
+            val_data, class_mode='sparse',x_col='path', y_col='label', batch_size=8, target_size=(528,528)
         )
 
         if fold_idx == 0:
@@ -88,20 +79,18 @@ def main():
         )
         train_class_weight = dict(enumerate(train_class_weight))
 
-        # model.compile(optimizer='rmsprop',
-        #               loss='categorical_crossentropy', metrics=['accuracy'])
+
         model.fit(train_generator, class_weight=train_class_weight,
                   validation_data=val_generator, epochs=10,
                   callbacks=[early_stop, reduce_lr])
 
-        test_generate = image_data_generator_test.flow_from_dataframe(
-            test_data, x_col='path', y_col='label', batch_size=4,  class_mode='sparse', target_size=(600,600)
-        )
-
-        model.evaluate(test_generate)
-
-        model.evaluate()
-
+        # test_generate = image_data_generator_test.flow_from_dataframe(
+        #     test_data, x_col='path', y_col='label', batch_size=4,  class_mode='sparse', target_size=(600,600)
+        # )
+        #
+        # predicted = model.predict(test_generate)
+        # predicted_label = np.argmax(predicted, axis=1)
+        # print(accuracy_score())
         model.save("model_fold.keras")
 if __name__ == '__main__':
     main()
