@@ -1,5 +1,4 @@
 import os
-import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -8,6 +7,7 @@ from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.models import Model
+from sklearn.utils.class_weight import compute_class_weight
 import matplotlib.pyplot as plt
 
 # 경로 설정
@@ -35,7 +35,8 @@ train_generator = train_datagen.flow_from_directory(
     target_size=(224, 224),
     batch_size=32,
     class_mode='categorical',
-    subset='training'
+    subset='training',
+    shuffle=True
 )
 
 val_generator = train_datagen.flow_from_directory(
@@ -43,16 +44,28 @@ val_generator = train_datagen.flow_from_directory(
     target_size=(224, 224),
     batch_size=32,
     class_mode='categorical',
-    subset='validation'
+    subset='validation',
+    shuffle=False
 )
 
 # 클래스 수
 num_classes = len(train_generator.class_indices)
 print(f"총 {num_classes}개의 클래스: {train_generator.class_indices}")
 
-# 모델 구성 (Functional API)
+# 클래스 가중치 계산
+labels = train_generator.classes
+class_weights = compute_class_weight(
+    class_weight="balanced",
+    classes=np.unique(labels),
+    y=labels
+)
+class_weight_dict = dict(zip(np.unique(labels), class_weights))
+print("[INFO] 클래스 가중치:", class_weight_dict)
+
+# 모델 구성
 input_tensor = Input(shape=(224, 224, 3))
 base_model = ResNet50(weights='imagenet', include_top=False, input_tensor=input_tensor)
+
 x = base_model.output
 x = GlobalAveragePooling2D()(x)
 x = BatchNormalization()(x)
@@ -61,7 +74,7 @@ x = Dropout(0.3)(x)
 output_tensor = Dense(num_classes, activation='softmax')(x)
 
 model = Model(inputs=input_tensor, outputs=output_tensor)
-model.trainable = True  # 전체 fine-tuning
+model.trainable = True
 
 # 컴파일
 model.compile(
@@ -79,11 +92,12 @@ history = model.fit(
     train_generator,
     validation_data=val_generator,
     epochs=50,
-    callbacks=[early_stopping, reduce_lr]
+    callbacks=[early_stopping, reduce_lr],
+    class_weight=class_weight_dict 
 )
 
-# 저장
-model_save_path = os.path.join(DATA_PATH, "cnn_model_tuned.h5")
+# 모델 저장
+model_save_path = os.path.join(DATA_PATH, "cnn_model_weighted.h5")
 model.save(model_save_path, save_format="tf")
 print(f"[완료] 모델 저장됨: {model_save_path}")
 
