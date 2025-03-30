@@ -13,7 +13,7 @@ else:
 # 경로 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', '..', 'data')
-SUBMISSION_PATH = os.path.join(DATA_DIR, 'gradcam_submission.csv')
+SUBMISSION_PATH = os.path.join(DATA_DIR, 'submission.csv')
 SAMPLE_PATH = os.path.join(DATA_DIR, 'sample_submission.csv')
 
 # CSV 불러오기

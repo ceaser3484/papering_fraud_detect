@@ -14,7 +14,7 @@ plt.rcParams["axes.unicode_minus"] = False  # 음수 기호 깨짐 방지
 # 경로 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "../../data")
-submission_path = os.path.join(DATA_PATH, "gradcam_submission.csv")
+submission_path = os.path.join(DATA_PATH, "submission.csv")
 sample_path = os.path.join(DATA_PATH, "sample_submission.csv")
 
 # CSV 불러오기

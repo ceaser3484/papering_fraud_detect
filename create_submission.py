@@ -8,7 +8,7 @@ from PIL import Image
 # 경로 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, '../../data')
-MODEL_PATH = os.path.join(DATA_PATH, 'cnn_model_weighted.h5')
+MODEL_PATH = os.path.join(DATA_PATH, 'cnn_model_gradcam.h5')
 TEST_DIR = os.path.join(DATA_PATH, 'dataset', 'test')
 SUBMISSION_PATH = os.path.join(DATA_PATH, 'submission.csv')
 
